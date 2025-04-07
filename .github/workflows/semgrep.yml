@@ -3,24 +3,32 @@ on:
   pull_request: {}
   push:
     branches:
-    - main
-    - master
+      - main
+      - master
     paths:
-    - .github/workflows/semgrep.yml
+      - .github/workflows/semgrep.yml
   schedule:
-  # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-  - cron: 30 23 * * *
+    - cron: 30 23 * * *
+
 name: Semgrep
+
 jobs:
   semgrep:
-    name: semgrep/ci
+    name: Run Semgrep CI
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     container:
-      image: semgrep/semgrep
+      image: semgrep/semgrep:latest  # Use Semgrep's official Docker image
     steps:
-    - uses: actions/checkout@v4
-    - run: semgrep ci
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep with Fail-on-Issue
+        run: semgrep --config p/owasp-top-ten --error --strict .  # Use ruleset (e.g., OWASP Top 10) and fail on issues
+
+      - name: Upload Findings to Semgrep App (Optional)
+        if: always()  # Always upload findings, even if the job fails
+        run: semgrep ci
